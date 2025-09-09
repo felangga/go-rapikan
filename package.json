@@ -2,7 +2,7 @@
   "name": "go-rapikan",
   "displayName": "Go Rapikan",
   "description": "VSCode extension to neatly group and sort Go imports (standard, external, internal company, internal project) after running go fmt.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": {
     "name": "felangga",
     "email": "felangga@gmail.com",
@@ -12,6 +12,7 @@
     "type": "git",
     "url": "https://github.com/felangga/go-rapikan.git"
   },
+  "license": "MIT",
   "icon": "icon.png",
   "engines": {
     "vscode": "^1.85.0"

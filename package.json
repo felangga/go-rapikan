@@ -3,6 +3,7 @@
   "displayName": "Go Rapikan",
   "description": "VSCode extension to neatly group and sort Go imports (standard, external, internal company, internal project) after running go fmt.",
   "version": "0.1.0",
+  "publisher": "felangga",
   "author": {
     "name": "felangga",
     "email": "felangga@gmail.com",
@@ -23,10 +24,20 @@
   "contributes": {
     "commands": [
       {
-        "command": "go-rapikan.sortImports",
-        "title": "Go Rapikan Imports"
+        "command": "go-rapikan.organizeCodes",
+        "title": "Go Rapikan: Organize Codes"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Go Rapikan",
+      "properties": {
+        "go-rapikan.organizeOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically organize Go codes when saving files"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

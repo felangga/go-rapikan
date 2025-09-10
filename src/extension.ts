@@ -98,7 +98,7 @@ async function organizeImports(editor: vscode.TextEditor): Promise<void> {
     const workspaceEdit = new vscode.WorkspaceEdit();
     workspaceEdit.set(editor.document.uri, edits);
     await vscode.workspace.applyEdit(workspaceEdit);
-    vscode.window.showInformationMessage("Imports organized successfully! 🎉");
+    vscode.window.showInformationMessage("Selesai! 🎉");
   } else {
     vscode.window.showInformationMessage("No imports found or imports are already organized");
   }
@@ -164,7 +164,7 @@ function categorizeImports(imports: string[], currentModule: string | null): Imp
         groups.internal[groupName] = [];
       }
       groups.internal[groupName].push(imp);
-    } else if (isCompanyExternal(pkg, companyName)) {
+    } else if (isCompanyExternal(pkg, companyName, currentModule)) {
       groups.companyExternal.push(imp);
     } else {
       groups.external.push(imp);
@@ -184,11 +184,29 @@ function isStandardLibrary(pkg: string): boolean {
 }
 
 function isInternalImport(pkg: string, currentModule: string | null): boolean {
-  return currentModule !== null && pkg.startsWith(currentModule + "/");
+  if (!currentModule) return false;
+  
+  // First check if it's exactly the current module
+  if (pkg.startsWith(currentModule + "/")) {
+    return true;
+  }
+  
+  // For monorepo support, check if it belongs to the same repository
+  const repoRoot = getRepositoryRoot(currentModule);
+  return repoRoot !== null && pkg.startsWith(repoRoot + "/");
 }
 
-function isCompanyExternal(pkg: string, companyName: string | null): boolean {
-  return companyName !== null && pkg.startsWith(`github.com/${companyName}/`);
+function isCompanyExternal(pkg: string, companyName: string | null, currentModule: string | null): boolean {
+  if (!companyName || !pkg.startsWith(`github.com/${companyName}/`)) {
+    return false;
+  }
+  
+  // Don't treat internal imports as company external
+  if (isInternalImport(pkg, currentModule)) {
+    return false;
+  }
+  
+  return true;
 }
 
 function getCompanyName(currentModule: string | null): string | null {
@@ -199,9 +217,39 @@ function getCompanyName(currentModule: string | null): string | null {
   return null;
 }
 
+function getRepositoryRoot(currentModule: string): string | null {
+  if (!currentModule || !currentModule.startsWith("github.com/")) {
+    return null;
+  }
+  
+  const parts = currentModule.split("/");
+  if (parts.length >= 3) {
+    return parts.slice(0, 3).join("/");
+  }
+  
+  return null;
+}
+
 function getInternalGroupName(pkg: string, currentModule: string): string {
-  const relativePath = pkg.substring(currentModule.length + 1);
-  return relativePath.split("/")[0];
+  // Get the repository root first
+  const repoRoot = getRepositoryRoot(currentModule);
+  
+  // If it's from the same repository, group them all under the repository name
+  if (repoRoot && pkg.startsWith(repoRoot + "/")) {
+    // All imports from the same repository get grouped together
+    const repoName = repoRoot.split("/").pop() || "internal";
+    return repoName;
+  }
+  
+  // If it's from the same module, use the first segment after the module path
+  if (pkg.startsWith(currentModule + "/")) {
+    const relativePath = pkg.substring(currentModule.length + 1);
+    return relativePath.split("/")[0];
+  }
+  
+  // Fallback to the first segment after domain
+  const parts = pkg.split("/");
+  return parts.length > 2 ? parts[2] : "internal";
 }
 
 function buildImportBlock(groups: ImportGroup): string {
